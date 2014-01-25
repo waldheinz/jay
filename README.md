@@ -12,7 +12,7 @@ so I release it under the BSD 2-Clause license:
 License
 -------
 
-Copyright (c) 2007, Matthias Treydte
+Copyright (c) 2007, Matthias Treydte  
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
