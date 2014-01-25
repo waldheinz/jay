@@ -2,10 +2,10 @@
 Jay
 ===
 
-This is a raytracing experiment of me, which was abandoned several years ago. If
+This is a raytracing experiment of mine, abandoned several years ago. If
 you are searching for something generating pretty images, this is most probably
 not what you want. The code roughly follows the ideas presented in Pharr &
-Humphreys excellent /Physically based Rendering" book (the first edition).
+Humphreys excellent /Physically based Rendering/ book (first edition).
 There might still be some code in here which could be of use for other projects,
 so I release it under the BSD 2-Clause license:
 
