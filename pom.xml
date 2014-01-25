@@ -1,0 +1,57 @@
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>de.waldheinz</groupId>
+    <artifactId>jay</artifactId>
+    <packaging>jar</packaging>
+    <version>0.1-SNAPSHOT</version>
+    <name>Jay</name>
+    <description>A Java Raytracing attempt</description>
+    <url>https://github.com/waldheinz/jay</url>
+    
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    
+    <prerequisites>
+        <maven>3.0.0</maven>
+    </prerequisites>
+    
+    <licenses>
+        <license>
+            <name>GNU Lesser General Public License, version 2.1</name>
+            <url>http://www.gnu.org/licenses/old-licenses/lgpl-2.1.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    
+    <scm>
+        <url>https://github.com/waldheinz/jay</url>
+        <connection>scm:git:https://github.com/waldheinz/jay.git</connection>
+        <developerConnection>scm:git:git@github.com:waldheinz/jay.git</developerConnection>
+    </scm>
+    
+    <developers>
+        <developer>
+            <id>trem</id>
+            <name>Matthias Treydte</name>
+            <email>mt@waldheinz.de</email>
+        </developer>
+    </developers>
+    
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/waldheinz/jay/issues</url>
+    </issueManagement>
+    
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    
+</project>
