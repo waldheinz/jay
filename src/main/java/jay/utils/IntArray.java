@@ -72,4 +72,8 @@ public class IntArray {
                 (size > 0)?size:this.size - offset);
     }
     
+    public int size() {
+        return this.size;
+    }
+    
 }

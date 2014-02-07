@@ -9,6 +9,7 @@ package jay.scene.primitives.accelerators;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import jay.maths.*;
@@ -65,7 +66,7 @@ public class KdTreeAccelerator extends Accelerator {
     
     StatsCounter intersections = new StatsCounter("Kd-Tree intersection tests");
     StatsCounter neari = new StatsCounter("Kd-Tree nearest intersections");
-    static Logger log = Logger.getLogger(KdTreeAccelerator.class.getName());
+    final static Logger log = Logger.getLogger(KdTreeAccelerator.class.getName());
     
     public KdTreeAccelerator(Group group) {
         this(group, 80, 1, 0.5f, 1);
@@ -260,17 +261,18 @@ public class KdTreeAccelerator extends Accelerator {
         for (int i=0; i < prims.size(); ++i)
             primNums.set(i, i);
        
-        
+        /*
         BoundEdge[][] edges = new BoundEdge[3][];
         
         for (int axis=0; axis < 3; axis++) {
-            /* Kanten für Achse initialisieren */
+            // Kanten für Achse initialisieren 
             
             ArrayList<BoundEdge> e = new ArrayList<BoundEdge>();
             
             for (int i=0; i < prims.size(); i++) {
                 int pn = primNums.get(i);
                 AABB bbox = primBounds.get(pn);
+                
                 if (bbox.diagonal().get(axis) == 0.0f) {
                     e.add(new BoundEdge(bbox.min.get(axis), pn, EdgeType.PLANAR));
                 } else {
@@ -282,6 +284,7 @@ public class KdTreeAccelerator extends Accelerator {
             edges[axis] = new BoundEdge[e.size()];
             e.toArray(edges[axis]);
         }
+        */
         
 //        for (int axis=0; axis < 3; axis++) {
 //            for (int p=0; p < prims.size()*2; p++) {
@@ -289,20 +292,20 @@ public class KdTreeAccelerator extends Accelerator {
 //            }
 //        }
         
-        IntArray prims0 = new IntArray(prims.size());
-        IntArray prims1 = new IntArray((maxDepth+1) * prims.size());
+        //IntArray prims0 = new IntArray(prims.size());
+        //IntArray prims1 = new IntArray((maxDepth+1) * prims.size());
         
         totalLeafs = totalDepth = totalPrims = 0;
         
         buildTree(0, bounds, primBounds, primNums,
-                prims.size(), maxDepth, edges, 0, prims0, prims1);
+                prims.size(), maxDepth, 0);
         
         /* Nodes in ein Array umkopieren */
         nodes = new KdTreeNode[nodesW.size()];
         nodes = nodesW.toArray(nodes);
         nodesW = null;
         
-        log.info("KdTree built: " + 
+        System.out.println("KdTree built: " + 
                 "nodes: " + nodes.length + ", " +
                 "prims: " + totalPrims + ", " +
                 "prims/leaf: " + (float)totalPrims / totalLeafs + ", " +
@@ -310,16 +313,35 @@ public class KdTreeAccelerator extends Accelerator {
         
     }
     
+    private ArrayList<BoundEdge> mkEdges(
+            ArrayList<AABB> bounds, IntArray primNums, int axis) {
+        
+        final ArrayList<BoundEdge> result = new ArrayList<BoundEdge>();
+        
+        for (int i=0; i < primNums.size(); i++) {
+            int pn = primNums.get(i);
+            AABB bbox = bounds.get(pn);
+            
+            if (bbox.diagonal().get(axis) == 0.0f) {
+                result.add(new BoundEdge(bbox.min.get(axis), pn, EdgeType.PLANAR));
+            } else {
+                result.add(new BoundEdge(bbox.min.get(axis), pn, EdgeType.START));
+                result.add(new BoundEdge(bbox.max.get(axis), pn, EdgeType.END));
+            }
+        }
+        
+        return result;
+    }
+    
     private void buildTree(int nodeNum, AABB nodeBounds,
             ArrayList<AABB> allPrimBounds,
             IntArray primNums, int nPrims, int depth,
-            KdTreeAccelerator.BoundEdge[][] edges,
-            int badRefines, IntArray prims0, IntArray prims1) {
+            int badRefines) {
         
         /* evtl. Rekursion beenden */
         if (nPrims <= maxPrims || depth == 0) {
             if ((nPrims > 16) && (depth == 0)) {
-                log.warning("reached max. KdTree depth with " + nPrims + 
+                System.out.println("reached max. KdTree depth with " + nPrims + 
                         " primitives");
             }
             
@@ -343,16 +365,23 @@ public class KdTreeAccelerator extends Accelerator {
         int axis = d.dominantAxis();
         int retries = 0;
         boolean retry = false;
-        int splitCount = 0;
+        ArrayList<BoundEdge> edges = null;
+        
+//        final int splitCount = edges[axis].length;
+        
         do {
-            java.util.Arrays.sort(edges[axis], 0, splitCount);
+            edges = mkEdges(allPrimBounds, primNums, axis);
+            Collections.sort(edges);
+            final int splitCount = edges.size();
+            
+//            java.util.Arrays.sort(edges[axis], 0, splitCount);
             
             /* beste Split - Position für diese Achse finden */
             int nBelow = 0, nAbove = nPrims;
             
             for (int i = 0; i < splitCount; ++i) {
-                if (edges[axis][i].type == EdgeType.END) --nAbove;
-                float edget = edges[axis][i].t;
+                if (edges.get(i).type == EdgeType.END) --nAbove;
+                float edget = edges.get(i).t;
                 
                 if (edget > nodeBounds.min.get(axis) &&
                         edget < nodeBounds.max.get(axis)) {
@@ -384,11 +413,11 @@ public class KdTreeAccelerator extends Accelerator {
                     }
                 }
                 
-                if (edges[axis][i].type == EdgeType.START) ++nBelow;
+                if (edges.get(i).type == EdgeType.START) ++nBelow;
             }
             
-            //if (!(nBelow == nPrims && nAbove == 0))
-            //    throw new IllegalStateException("hmm");
+            if (!(nBelow == nPrims && nAbove == 0))
+                throw new IllegalStateException("hmm");
             
             retry = ((bestAxis == -1) && (retries < 2));
             
@@ -404,7 +433,7 @@ public class KdTreeAccelerator extends Accelerator {
                 bestAxis == -1 || badRefines == 3) {
             nodesW.add(makeLeaf(primNums, nPrims, primitives));
             if (nPrims > 16)
-                log.warning("aborting KdTree build recursion (bc=" +
+                System.out.println("aborting KdTree build recursion (bc=" +
                     bestCost + ", oc=" + oldCost + ", #prims=" + 
                     nPrims + ", br=" + badRefines + ")");
             totalPrims += nPrims;
@@ -413,39 +442,50 @@ public class KdTreeAccelerator extends Accelerator {
             return;
         }
         
-        primNums = null;
-        
         /* Primitive nach oben / unten sortieren */
         int n0 = 0, n1 = 0;
         
-        for (int i = 0; i < bestOffset; ++i)
-            if (edges[bestAxis][i].type == EdgeType.START)
-                prims0.set(n0++, edges[bestAxis][i].primNum);
+        final ArrayList<Integer> prims0Tmp = new ArrayList<Integer>();
+        final ArrayList<Integer> prims1Tmp = new ArrayList<Integer>();
         
-        for (int i = bestOffset + 1; i < splitCount; ++i)
-            if (edges[bestAxis][i].type == EdgeType.END)
-                prims1.set(n1++, edges[bestAxis][i].primNum);
+        for (int i = 0; i < bestOffset; ++i) {
+            if (edges.get(i).type == EdgeType.START) {
+                prims0Tmp.add(edges.get(n0++).primNum);
+//                prims0.set(n0++, edges[bestAxis][i].primNum);
+            }
+        }
+        
+        for (int i = bestOffset + 1; i < edges.size(); ++i) {
+            if (edges.get(i).type == EdgeType.END) {
+                prims1Tmp.add(edges.get(n1++).primNum);
+//                prims1.set(n1++, edges[bestAxis][i].primNum);
+            }
+        }
         
         /* rekursiver Abstieg */
-        float tsplit = edges[bestAxis][bestOffset].t;
+        float tsplit = edges.get(bestOffset).t;
         
         nodesW.add(makeInterior(bestAxis, tsplit));
         
         AABB bounds[] = nodeBounds.split(tsplit, bestAxis);
         
-        edges[0] = null;
-        edges[1] = null;
-        edges[2] = null;
+        final IntArray prims0 = new IntArray(prims0Tmp.size());
+        for (int i=0; i < prims0Tmp.size(); i++) {
+            prims0.set(i, prims0Tmp.get(i));
+        }
+        
+        final IntArray prims1 = new IntArray(prims1Tmp.size());
+        for (int i=0; i < prims1Tmp.size(); i++) {
+            prims1.set(i, prims1Tmp.get(i));
+        }
         
         buildTree(nodeNum+1, bounds[0], allPrimBounds,
-                prims0, n0, depth-1, edges, badRefines, prims0, prims1.subArray(nPrims, 0));
+                prims0, n0, depth-1, badRefines);
         
         nodesW.get(nodeNum).setAboveChild(nodesW.size());
         
         buildTree(nodesW.size(), bounds[1], allPrimBounds,
-                prims1, n1, depth-1, edges, badRefines, prims0, prims1.subArray(nPrims, 0));
-        
-        prims0 = prims1 = null;
+                prims1, n1, depth-1, badRefines);
     }
     
     public void writeTree(File file) throws IOException {
